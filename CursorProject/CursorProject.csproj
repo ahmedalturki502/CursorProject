@@ -1,0 +1,35 @@
+<!-- Project file for the E-Commerce Web API application -->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Configuration properties for the project -->
+  <PropertyGroup>
+    <!-- Specifies the target .NET framework version (8.0) -->
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Enables nullable reference types for better null safety -->
+    <Nullable>enable</Nullable>
+    <!-- Enables implicit using statements for common namespaces -->
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- NuGet package dependencies required for the application -->
+  <ItemGroup>
+    <!-- JWT Bearer authentication package for secure API access -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <!-- ASP.NET Identity with Entity Framework for user management -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
+    <!-- Entity Framework Core SQL Server provider for database operations -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <!-- Entity Framework Core tools for migrations and database management -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
+      <!-- Excludes tools from runtime deployment -->
+      <PrivateAssets>all</PrivateAssets>
+      <!-- Includes tools only during build and development -->
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- Swagger/OpenAPI package for API documentation -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <!-- JWT token handling package for creating and validating tokens -->
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.4.0" />
+  </ItemGroup>
+
+</Project>

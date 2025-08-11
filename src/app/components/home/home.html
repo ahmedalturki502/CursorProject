@@ -1,0 +1,62 @@
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Welcome to Our E-Commerce Store</h1>
+      <p>Discover amazing products at great prices. Shop with confidence!</p>
+      <div class="hero-buttons">
+        <a routerLink="/products" class="btn btn-primary">Browse Products</a>
+        <a routerLink="/register" class="btn btn-outline">Join Now</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products Section -->
+  <section class="featured-products" *ngIf="featuredProducts.length > 0">
+    <h2>Featured Products</h2>
+    <div class="products-grid">
+      <div class="product-card" *ngFor="let product of featuredProducts">
+        <div class="product-image">
+          <img [src]="product.imageUrl" [alt]="product.name" loading="lazy">
+        </div>
+        <div class="product-info">
+          <h3>{{ product.name }}</h3>
+          <p class="product-description">{{ product.description }}</p>
+          <div class="product-price">${{ product.price.toFixed(2) }}</div>
+          <div class="product-actions">
+            <button 
+              (click)="addToCart(product.id)" 
+              class="btn btn-primary"
+              [disabled]="!isAuthenticated">
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="categories" *ngIf="categories.length > 0">
+    <h2>Shop by Category</h2>
+    <div class="categories-grid">
+      <div class="category-card" *ngFor="let category of categories">
+        <div class="category-content">
+          <h3>{{ category.name }}</h3>
+          <a [routerLink]="['/products']" [queryParams]="{categoryId: category.id}" class="btn btn-outline">
+            View Products
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="cta">
+    <div class="cta-content">
+      <h2>Ready to Start Shopping?</h2>
+      <p>Join thousands of satisfied customers who trust our store.</p>
+      <a routerLink="/products" class="btn btn-primary">Start Shopping</a>
+    </div>
+  </section>
+</div>

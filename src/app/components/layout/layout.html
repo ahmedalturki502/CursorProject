@@ -1,0 +1,44 @@
+<div class="layout-container">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <a routerLink="/">🛒 E-Commerce Store</a>
+      </div>
+      
+      <nav class="nav-menu">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
+        <a routerLink="/products" routerLinkActive="active">Products</a>
+        <a routerLink="/cart" routerLinkActive="active" class="cart-link">
+          Cart <span class="cart-count" *ngIf="cartItemCount > 0">({{ cartItemCount }})</span>
+        </a>
+      </nav>
+      
+      <div class="user-menu">
+        <ng-container *ngIf="!isAuthenticated; else authenticatedUser">
+          <a routerLink="/login" class="btn btn-outline">Login</a>
+          <a routerLink="/register" class="btn btn-primary">Register</a>
+        </ng-container>
+        
+        <ng-template #authenticatedUser>
+          <div class="user-info">
+            <span class="user-name">{{ currentUser?.fullName }}</span>
+            <button (click)="logout()" class="btn btn-outline">Logout</button>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2024 E-Commerce Store. All rights reserved.</p>
+    </div>
+  </footer>
+</div>

@@ -1,0 +1,289 @@
+### E-Commerce API Endpoint Testing
+### Base URL: https://localhost:7001 or http://localhost:5000
+
+### ========================================
+### 1. AUTHENTICATION ENDPOINTS
+### ========================================
+
+### Test 1.1: Register a new customer
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "John Customer",
+  "email": "customer@example.com",
+  "password": "Customer123!",
+  "confirmPassword": "Customer123!"
+}
+
+### Test 1.2: Register another customer
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Jane Customer",
+  "email": "jane@example.com",
+  "password": "Jane123!",
+  "confirmPassword": "Jane123!"
+}
+
+### Test 1.3: Login with customer
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer@example.com",
+  "password": "Customer123!"
+}
+
+### Test 1.4: Login with admin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Admin123!"
+}
+
+### Test 1.5: Get profile (requires auth)
+GET {{baseUrl}}/api/auth/profile
+Authorization: Bearer {{customerToken}}
+
+### Test 1.6: Update profile (requires auth)
+PUT {{baseUrl}}/api/auth/profile
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "fullName": "John Updated Customer",
+  "email": "customer@example.com"
+}
+
+### ========================================
+### 2. CATEGORY ENDPOINTS (Admin only)
+### ========================================
+
+### Test 2.1: Get all categories (public)
+GET {{baseUrl}}/api/categories
+
+### Test 2.2: Get specific category (public)
+GET {{baseUrl}}/api/categories/1
+
+### Test 2.3: Create new category (admin only)
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Test Category"
+}
+
+### Test 2.4: Update category (admin only)
+PUT {{baseUrl}}/api/categories/5
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Test Category"
+}
+
+### ========================================
+### 3. PRODUCT ENDPOINTS
+### ========================================
+
+### Test 3.1: Get all products (public)
+GET {{baseUrl}}/api/products
+
+### Test 3.2: Get products with pagination
+GET {{baseUrl}}/api/products?page=1&pageSize=5
+
+### Test 3.3: Get products with category filter
+GET {{baseUrl}}/api/products?categoryId=1
+
+### Test 3.4: Get products with search
+GET {{baseUrl}}/api/products?search=smartphone
+
+### Test 3.5: Get specific product (public)
+GET {{baseUrl}}/api/products/1
+
+### Test 3.6: Create new product (admin only)
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Test Product",
+  "description": "This is a test product",
+  "price": 99.99,
+  "imageUrl": "https://via.placeholder.com/300x300?text=TestProduct",
+  "stockQuantity": 50,
+  "categoryId": 1
+}
+
+### Test 3.7: Update product (admin only)
+PUT {{baseUrl}}/api/products/5
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Test Product",
+  "description": "This is an updated test product",
+  "price": 89.99,
+  "imageUrl": "https://via.placeholder.com/300x300?text=UpdatedTestProduct",
+  "stockQuantity": 45,
+  "categoryId": 1
+}
+
+### ========================================
+### 4. CART ENDPOINTS (requires auth)
+### ========================================
+
+### Test 4.1: Get cart (creates if doesn't exist)
+GET {{baseUrl}}/api/cart
+Authorization: Bearer {{customerToken}}
+
+### Test 4.2: Add product to cart
+POST {{baseUrl}}/api/cart/add
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "quantity": 2
+}
+
+### Test 4.3: Add another product to cart
+POST {{baseUrl}}/api/cart/add
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": 2,
+  "quantity": 1
+}
+
+### Test 4.4: Get cart again to see items
+GET {{baseUrl}}/api/cart
+Authorization: Bearer {{customerToken}}
+
+### Test 4.5: Update cart item quantity
+PUT {{baseUrl}}/api/cart/items/1
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+### Test 4.6: Get cart after update
+GET {{baseUrl}}/api/cart
+Authorization: Bearer {{customerToken}}
+
+### ========================================
+### 5. ORDER ENDPOINTS (requires auth)
+### ========================================
+
+### Test 5.1: Place order from cart
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "shippingAddress": "123 Main Street, City, State 12345"
+}
+
+### Test 5.2: Get user orders
+GET {{baseUrl}}/api/orders
+Authorization: Bearer {{customerToken}}
+
+### Test 5.3: Get specific order
+GET {{baseUrl}}/api/orders/1
+Authorization: Bearer {{customerToken}}
+
+### Test 5.4: Get all orders (admin only)
+GET {{baseUrl}}/api/orders/admin/all
+Authorization: Bearer {{adminToken}}
+
+### Test 5.5: Get all orders with filters (admin only)
+GET {{baseUrl}}/api/orders/admin/all?customerEmail=customer&fromDate=2024-01-01
+Authorization: Bearer {{adminToken}}
+
+### ========================================
+### 6. ERROR TESTING
+### ========================================
+
+### Test 6.1: Try to register with existing email
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Duplicate User",
+  "email": "customer@example.com",
+  "password": "Password123!",
+  "confirmPassword": "Password123!"
+}
+
+### Test 6.2: Try to login with wrong password
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer@example.com",
+  "password": "WrongPassword123!"
+}
+
+### Test 6.3: Try to access protected endpoint without token
+GET {{baseUrl}}/api/cart
+
+### Test 6.4: Try to access admin endpoint with customer token
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "name": "Unauthorized Product",
+  "description": "This should fail",
+  "price": 99.99,
+  "imageUrl": "https://example.com/image.jpg",
+  "stockQuantity": 10,
+  "categoryId": 1
+}
+
+### Test 6.5: Try to add product with insufficient stock
+POST {{baseUrl}}/api/cart/add
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "quantity": 1000
+}
+
+### Test 6.6: Try to place order with empty cart
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "shippingAddress": "123 Main Street, City, State 12345"
+}
+
+### ========================================
+### 7. CLEANUP TESTS
+### ========================================
+
+### Test 7.1: Remove cart item
+DELETE {{baseUrl}}/api/cart/items/2
+Authorization: Bearer {{customerToken}}
+
+### Test 7.2: Clear cart
+DELETE {{baseUrl}}/api/cart/clear
+Authorization: Bearer {{customerToken}}
+
+### Test 7.3: Get empty cart
+GET {{baseUrl}}/api/cart
+Authorization: Bearer {{customerToken}}
+
+### Test 7.4: Logout
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{customerToken}}

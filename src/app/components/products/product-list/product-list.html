@@ -1,0 +1,39 @@
+<div class="product-list-container">
+  <div class="product-list-header">
+    <h1>Our Products</h1>
+    <p>Discover amazing products at great prices</p>
+  </div>
+
+  <div class="product-grid" *ngIf="!loading; else loadingTemplate">
+    <div class="product-card" *ngFor="let product of products">
+      <div class="product-image">
+        <img [src]="product.imageUrl" [alt]="product.name" loading="lazy">
+      </div>
+      <div class="product-info">
+        <h3>{{ product.name }}</h3>
+        <p class="product-description">{{ product.description }}</p>
+        <div class="product-category">{{ product.category.name }}</div>
+        <div class="product-price">${{ product.price.toFixed(2) }}</div>
+        <div class="product-stock">In Stock: {{ product.stockQuantity }}</div>
+        <div class="product-actions">
+          <button 
+            (click)="addToCart(product.id)" 
+            class="btn btn-primary"
+            [disabled]="!isAuthenticated">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #loadingTemplate>
+    <div class="loading">
+      <p>Loading products...</p>
+    </div>
+  </ng-template>
+
+  <div class="no-products" *ngIf="!loading && products.length === 0">
+    <p>No products found.</p>
+  </div>
+</div>

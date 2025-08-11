@@ -1,0 +1,80 @@
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-content">
+    <h1 class="hero-title">Welcome to Our E-Commerce Store</h1>
+    <p class="hero-subtitle">Discover amazing products at great prices. Shop with confidence and enjoy fast delivery.</p>
+    <div class="hero-actions">
+      <a routerLink="/products" class="btn btn-primary">Shop Now</a>
+      <a routerLink="/register" class="btn btn-secondary">Create Account</a>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="featured-products">
+  <div class="container">
+    <h2 class="section-title">Featured Products</h2>
+    
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading featured products...</p>
+    </div>
+    
+    <!-- Error State -->
+    <div *ngIf="error" class="error-message">
+      {{ error }}
+    </div>
+    
+    <!-- Products Grid -->
+    <div *ngIf="!loading && !error" class="products-grid">
+      <div *ngFor="let product of featuredProducts" class="product-card">
+        <div class="product-image">
+          <img [src]="product.imageUrl || 'assets/placeholder-product.jpg'" [alt]="product.name" />
+        </div>
+        <div class="product-info">
+          <h3 class="product-name">{{ product.name }}</h3>
+          <p class="product-description">{{ product.description | slice:0:100 }}{{ product.description.length > 100 ? '...' : '' }}</p>
+          <div class="product-price">${{ product.price.toFixed(2) }}</div>
+          <div class="product-actions">
+            <button class="btn btn-primary btn-sm">Add to Cart</button>
+            <a [routerLink]="['/products', product.id]" class="btn btn-secondary btn-sm">View Details</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- View All Products -->
+    <div *ngIf="!loading && !error" class="view-all">
+      <a routerLink="/products" class="btn btn-outline">View All Products</a>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+  <div class="container">
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon">🚚</div>
+        <h3>Fast Delivery</h3>
+        <p>Free shipping on orders over $50. Get your products delivered quickly and safely.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🛡️</div>
+        <h3>Secure Shopping</h3>
+        <p>Your data is protected with industry-standard security measures.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">↩️</div>
+        <h3>Easy Returns</h3>
+        <p>30-day return policy. Not satisfied? Return your purchase hassle-free.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">💬</div>
+        <h3>24/7 Support</h3>
+        <p>Our customer service team is here to help you anytime, anywhere.</p>
+      </div>
+    </div>
+  </div>
+</section>
