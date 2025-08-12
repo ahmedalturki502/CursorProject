@@ -1,5 +1,5 @@
 // Import necessary namespaces for JWT token handling
-using CursorProject.Models;                    // Application user model
+using CursorProject.Entities;                    // Application user model
 using Microsoft.AspNetCore.Identity;          // User management
 using Microsoft.IdentityModel.Tokens;         // JWT token validation
 using System.IdentityModel.Tokens.Jwt;        // JWT token creation and handling

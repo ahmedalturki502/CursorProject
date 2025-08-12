@@ -1,5 +1,5 @@
 // Import necessary namespaces for the database context
-using CursorProject.Models;                    // Application models (User, Product, Order, etc.)
+using CursorProject.Entities;                    // Application models (User, Product, Order, etc.)
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;  // Identity with EF Core
 using Microsoft.EntityFrameworkCore;         // Entity Framework Core
 

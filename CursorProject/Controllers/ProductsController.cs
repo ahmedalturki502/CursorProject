@@ -1,10 +1,9 @@
 // Import necessary namespaces for the products controller
-using CursorProject.Data;                      // Database context
-using CursorProject.DTOs;                      // Data transfer objects
-using CursorProject.Models;                    // Application models
+using CursorProject.DTOs.Product;              // Data transfer objects
+using CursorProject.DTOs.Category;             // Category DTOs
+using CursorProject.Services;                  // Custom services (ProductService)
 using Microsoft.AspNetCore.Authorization;      // Authorization attributes
 using Microsoft.AspNetCore.Mvc;                // MVC controller base classes
-using Microsoft.EntityFrameworkCore;         // Entity Framework Core
 
 // Namespace for API controllers
 namespace CursorProject.Controllers
@@ -19,17 +18,17 @@ namespace CursorProject.Controllers
     {
         // Private field for dependency injection
         /// <summary>
-        /// Database context for accessing product data
+        /// Product service for handling product operations
         /// </summary>
-        private readonly ApplicationDbContext _context;
+        private readonly IProductService _productService;
 
         /// <summary>
-        /// Constructor that accepts database context via dependency injection
+        /// Constructor that accepts product service via dependency injection
         /// </summary>
-        /// <param name="context">Database context for data access</param>
-        public ProductsController(ApplicationDbContext context)
+        /// <param name="productService">Product service for product operations</param>
+        public ProductsController(IProductService productService)
         {
-            _context = context;  // Store database context reference
+            _productService = productService;  // Store product service reference
         }
 
         /// <summary>
@@ -48,61 +47,12 @@ namespace CursorProject.Controllers
             [FromQuery] int? categoryId = null, // Optional category filter
             [FromQuery] string? search = null)  // Optional search term
         {
-            // Start with base query including category information
-            var query = _context.Products
-                .Include(p => p.Category)       // Include category data for each product
-                .Where(p => p.StockQuantity > 0); // Only show products with available stock
-
-            // Apply category filter if specified
-            if (categoryId.HasValue)
-            {
-                query = query.Where(p => p.CategoryId == categoryId.Value);  // Filter by category ID
-            }
-
-            // Apply search filter if specified
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var searchTerm = search.ToLower();  // Convert search term to lowercase for case-insensitive search
-                query = query.Where(p => p.Name.ToLower().Contains(searchTerm) ||    // Search in product name
-                                       p.Description.ToLower().Contains(searchTerm)); // Search in product description
-            }
-
-            // Get total count for pagination
-            var totalCount = await query.CountAsync();
-            
-            // Calculate total pages needed
-            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
-
-            // Get products for current page with pagination
-            var products = await query
-                .Skip((page - 1) * pageSize)    // Skip products from previous pages
-                .Take(pageSize)                 // Take only products for current page
-                .Select(p => new ProductDto     // Project to DTO for response
-                {
-                    Id = p.Id,                  // Product ID
-                    Name = p.Name,              // Product name
-                    Description = p.Description, // Product description
-                    Price = p.Price,            // Product price
-                    ImageUrl = p.ImageUrl,      // Product image URL
-                    StockQuantity = p.StockQuantity, // Available stock
-                    CategoryId = p.CategoryId,  // Category ID
-                    CategoryName = p.Category.Name // Category name for display
-                })
-                .ToListAsync();                 // Execute query and get results
-
-            // Return paginated response with metadata
-            return Ok(new ProductListResponse
-            {
-                Products = products,            // List of products for current page
-                TotalCount = totalCount,        // Total number of products matching criteria
-                PageNumber = page,              // Current page number
-                PageSize = pageSize,            // Number of products per page
-                TotalPages = totalPages         // Total number of pages
-            });
+            var response = await _productService.GetProductsAsync(page, pageSize, categoryId, search);
+            return Ok(response);
         }
 
         /// <summary>
-        /// Gets a specific product by ID
+        /// Gets a specific product by its ID
         /// GET: api/products/{id}
         /// </summary>
         /// <param name="id">Product ID</param>
@@ -110,183 +60,90 @@ namespace CursorProject.Controllers
         [HttpGet("{id}")]  // HTTP GET endpoint with ID parameter
         public async Task<ActionResult<ProductDto>> GetProduct(int id)
         {
-            // Find product by ID including category information
-            var product = await _context.Products
-                .Include(p => p.Category)       // Include category data
-                .FirstOrDefaultAsync(p => p.Id == id);  // Find product by ID
-
-            // Return 404 if product not found
+            var product = await _productService.GetProductByIdAsync(id);
             if (product == null)
             {
-                return NotFound();
+                return NotFound();  // Return 404 if product not found
             }
 
-            // Return product details as DTO
-            return Ok(new ProductDto
-            {
-                Id = product.Id,                // Product ID
-                Name = product.Name,            // Product name
-                Description = product.Description, // Product description
-                Price = product.Price,          // Product price
-                ImageUrl = product.ImageUrl,    // Product image URL
-                StockQuantity = product.StockQuantity, // Available stock
-                CategoryId = product.CategoryId, // Category ID
-                CategoryName = product.Category.Name // Category name
-            });
+            return Ok(product);
         }
 
         /// <summary>
-        /// Creates a new product (Admin only)
+        /// Creates a new product
         /// POST: api/products
+        /// Requires admin authorization
         /// </summary>
         /// <param name="request">Product creation request</param>
         /// <returns>Created product details</returns>
         [HttpPost]  // HTTP POST endpoint
-        [Authorize(Roles = "Admin")]  // Requires Admin role
-        public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductRequest request)
+        [Authorize(Roles = "Admin")]  // Require admin role
+        public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductDto request)
         {
-            // Check if product name already exists (names must be unique)
-            var existingProduct = await _context.Products
-                .FirstOrDefaultAsync(p => p.Name == request.Name);
-            if (existingProduct != null)
+            try
             {
-                return BadRequest(new { Message = "Product name already exists" });  // Return 400 if name taken
+                var product = await _productService.CreateProductAsync(request);
+                return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
             }
-
-            // Check if the specified category exists
-            var category = await _context.Categories.FindAsync(request.CategoryId);
-            if (category == null)
+            catch (ArgumentException ex)
             {
-                return BadRequest(new { Message = "Category does not exist" });  // Return 400 if category invalid
+                return BadRequest(new { Message = ex.Message });
             }
-
-            // Create new product entity
-            var product = new Product
-            {
-                Name = request.Name,            // Product name
-                Description = request.Description, // Product description
-                Price = request.Price,          // Product price
-                ImageUrl = request.ImageUrl,    // Product image URL
-                StockQuantity = request.StockQuantity, // Initial stock quantity
-                CategoryId = request.CategoryId // Category ID
-            };
-
-            // Add product to database
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();  // Save changes to database
-
-            // Return 201 Created with product details and location header
-            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, new ProductDto
-            {
-                Id = product.Id,                // Product ID
-                Name = product.Name,            // Product name
-                Description = product.Description, // Product description
-                Price = product.Price,          // Product price
-                ImageUrl = product.ImageUrl,    // Product image URL
-                StockQuantity = product.StockQuantity, // Stock quantity
-                CategoryId = product.CategoryId, // Category ID
-                CategoryName = category.Name    // Category name
-            });
         }
 
         /// <summary>
-        /// Updates an existing product (Admin only)
+        /// Updates an existing product
         /// PUT: api/products/{id}
+        /// Requires admin authorization
         /// </summary>
-        /// <param name="id">Product ID to update</param>
+        /// <param name="id">Product ID</param>
         /// <param name="request">Product update request</param>
         /// <returns>Updated product details</returns>
         [HttpPut("{id}")]  // HTTP PUT endpoint with ID parameter
-        [Authorize(Roles = "Admin")]  // Requires Admin role
+        [Authorize(Roles = "Admin")]  // Require admin role
         public async Task<ActionResult<ProductDto>> UpdateProduct(int id, UpdateProductRequest request)
         {
-            // Find product by ID
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            try
             {
-                return NotFound();  // Return 404 if product not found
+                var product = await _productService.UpdateProductAsync(id, request);
+                return Ok(product);
             }
-
-            // Check if product name already exists (excluding current product)
-            var existingProduct = await _context.Products
-                .FirstOrDefaultAsync(p => p.Name == request.Name && p.Id != id);
-            if (existingProduct != null)
+            catch (ArgumentException ex)
             {
-                return BadRequest(new { Message = "Product name already exists" });  // Return 400 if name taken
+                return BadRequest(new { Message = ex.Message });
             }
-
-            // Check if the specified category exists
-            var category = await _context.Categories.FindAsync(request.CategoryId);
-            if (category == null)
-            {
-                return BadRequest(new { Message = "Category does not exist" });  // Return 400 if category invalid
-            }
-
-            // Check if reducing stock below quantity already ordered
-            var orderedQuantity = await _context.OrderItems
-                .Where(oi => oi.ProductId == id)  // Filter by product ID
-                .SumAsync(oi => oi.Quantity);     // Sum all ordered quantities
-
-            if (request.StockQuantity < orderedQuantity)
-            {
-                return BadRequest(new { Message = "Cannot reduce stock below quantity already ordered" });  // Return 400 if stock too low
-            }
-
-            // Update product properties
-            product.Name = request.Name;            // Update name
-            product.Description = request.Description; // Update description
-            product.Price = request.Price;          // Update price
-            product.ImageUrl = request.ImageUrl;    // Update image URL
-            product.StockQuantity = request.StockQuantity; // Update stock quantity
-            product.CategoryId = request.CategoryId; // Update category ID
-
-            // Save changes to database
-            await _context.SaveChangesAsync();
-
-            // Return updated product details
-            return Ok(new ProductDto
-            {
-                Id = product.Id,                // Product ID
-                Name = product.Name,            // Updated name
-                Description = product.Description, // Updated description
-                Price = product.Price,          // Updated price
-                ImageUrl = product.ImageUrl,    // Updated image URL
-                StockQuantity = product.StockQuantity, // Updated stock quantity
-                CategoryId = product.CategoryId, // Updated category ID
-                CategoryName = category.Name    // Category name
-            });
         }
 
         /// <summary>
-        /// Deletes a product (Admin only)
+        /// Deletes a product
         /// DELETE: api/products/{id}
+        /// Requires admin authorization
         /// </summary>
-        /// <param name="id">Product ID to delete</param>
-        /// <returns>No content on success</returns>
+        /// <param name="id">Product ID</param>
+        /// <returns>Success response</returns>
         [HttpDelete("{id}")]  // HTTP DELETE endpoint with ID parameter
-        [Authorize(Roles = "Admin")]  // Requires Admin role
+        [Authorize(Roles = "Admin")]  // Require admin role
         public async Task<ActionResult> DeleteProduct(int id)
         {
-            // Find product by ID
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            var success = await _productService.DeleteProductAsync(id);
+            if (!success)
             {
                 return NotFound();  // Return 404 if product not found
             }
 
-            // Check if product is part of any existing order (prevent deletion)
-            var hasOrders = await _context.OrderItems
-                .AnyAsync(oi => oi.ProductId == id);  // Check if any order items reference this product
-            if (hasOrders)
-            {
-                return BadRequest(new { Message = "Cannot delete product that is part of existing orders" });  // Return 400 if product has orders
-            }
+            return NoContent();  // Return 204 for successful deletion
+        }
 
-            // Remove product from database
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();  // Save changes to database
-
-            return NoContent();  // Return 204 No Content on successful deletion
+        /// <summary>
+        /// Gets all available categories
+        /// GET: api/products/categories
+        /// </summary>
+        /// <returns>List of categories</returns>
+        [HttpGet("categories")]  // HTTP GET endpoint for categories
+        public async Task<ActionResult<List<CategoryDto>>> GetCategories()
+        {
+            var categories = await _productService.GetCategoriesAsync();
+            return Ok(categories);
         }
     }
 }

@@ -159,4 +159,52 @@ namespace CursorProject.DTOs
         [EmailAddress(ErrorMessage = "Invalid email address")]  // Validation: must be valid email format
         public string Email { get; set; } = string.Empty;
     }
+
+    /// <summary>
+    /// Data transfer object for refresh token requests
+    /// Contains the expired token and refresh token for token renewal
+    /// </summary>
+    public class RefreshTokenRequest
+    {
+        /// <summary>
+        /// The expired JWT access token
+        /// </summary>
+        [Required]
+        public string Token { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The refresh token for obtaining a new access token
+        /// </summary>
+        [Required]
+        public string RefreshToken { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Data transfer object for password change requests
+    /// Contains current and new password for password updates
+    /// </summary>
+    public class ChangePasswordRequest
+    {
+        /// <summary>
+        /// Current password for verification
+        /// </summary>
+        [Required]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        /// <summary>
+        /// New password to replace the current one
+        /// </summary>
+        [Required]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
+        [RegularExpression(@"^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,}$",
+            ErrorMessage = "Password must contain at least one number and one special character")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Confirmation of the new password
+        /// </summary>
+        [Required]
+        [Compare("NewPassword", ErrorMessage = "Passwords do not match")]
+        public string ConfirmNewPassword { get; set; } = string.Empty;
+    }
 }

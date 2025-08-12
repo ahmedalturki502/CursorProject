@@ -1,5 +1,6 @@
 // Import data validation attributes for input validation
 using System.ComponentModel.DataAnnotations;
+using CursorProject.Entities;
 
 // Namespace for Data Transfer Objects (DTOs)
 namespace CursorProject.DTOs
@@ -84,6 +85,11 @@ namespace CursorProject.DTOs
         /// Calculated as sum of all order item total prices
         /// </summary>
         public decimal TotalAmount { get; set; }
+
+        /// <summary>
+        /// Current status of the order
+        /// </summary>
+        public OrderStatus Status { get; set; }
         
         /// <summary>
         /// Shipping address where the order was delivered
@@ -155,5 +161,32 @@ namespace CursorProject.DTOs
         /// Calculated as TotalCount / PageSize (rounded up)
         /// </summary>
         public int TotalPages { get; set; }
+    }
+
+    /// <summary>
+    /// Data transfer object for creating new orders
+    /// Contains order creation information
+    /// </summary>
+    public class CreateOrderRequest
+    {
+        /// <summary>
+        /// Shipping address where the order will be delivered
+        /// </summary>
+        [Required]
+        [StringLength(500, MinimumLength = 10, ErrorMessage = "Shipping address must be at least 10 characters")]
+        public string ShippingAddress { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Data transfer object for updating order status
+    /// Contains the new status for an order
+    /// </summary>
+    public class UpdateOrderStatusRequest
+    {
+        /// <summary>
+        /// New status for the order
+        /// </summary>
+        [Required]
+        public OrderStatus Status { get; set; }
     }
 }

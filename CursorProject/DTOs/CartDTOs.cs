@@ -117,4 +117,36 @@ namespace CursorProject.DTOs
         /// </summary>
         public int TotalItems { get; set; }
     }
+
+    /// <summary>
+    /// Data transfer object for cart operation responses
+    /// Contains success status, message, and cart information
+    /// </summary>
+    public class CartResponse
+    {
+        /// <summary>
+        /// Indicates whether the cart operation was successful
+        /// </summary>
+        public bool Success { get; set; }
+
+        /// <summary>
+        /// Optional message providing additional information about the operation
+        /// </summary>
+        public string Message { get; set; } = string.Empty;
+
+        /// <summary>
+        /// List of all items in the shopping cart
+        /// </summary>
+        public List<CartItemDto> CartItems { get; set; } = new List<CartItemDto>();
+
+        /// <summary>
+        /// Total number of items in the cart
+        /// </summary>
+        public int TotalItems { get; set; }
+
+        /// <summary>
+        /// Total amount for all items in the cart
+        /// </summary>
+        public decimal TotalAmount { get; set; }
+    }
 }

@@ -17,6 +17,13 @@ namespace CursorProject.DTOs
         [Required]  // Validation: field is mandatory
         [StringLength(100)]  // Validation: maximum 100 characters
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Description of the category
+        /// Optional field with maximum length of 500 characters
+        /// </summary>
+        [StringLength(500)]  // Validation: maximum 500 characters
+        public string? Description { get; set; }
     }
 
     /// <summary>
@@ -32,6 +39,13 @@ namespace CursorProject.DTOs
         [Required]  // Validation: field is mandatory
         [StringLength(100)]  // Validation: maximum 100 characters
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Updated description of the category
+        /// Optional field with maximum length of 500 characters
+        /// </summary>
+        [StringLength(500)]  // Validation: maximum 500 characters
+        public string? Description { get; set; }
     }
 
     /// <summary>
@@ -49,6 +63,11 @@ namespace CursorProject.DTOs
         /// Name of the category
         /// </summary>
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Description of the category
+        /// </summary>
+        public string? Description { get; set; }
         
         /// <summary>
         /// Number of products currently in this category

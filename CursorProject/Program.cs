@@ -1,7 +1,10 @@
 // Import necessary namespaces for the application
 using CursorProject.Data;           // Database context and data access
-using CursorProject.Models;         // Entity models (User, Product, Order, etc.)
+using CursorProject.Entities;         // Entity models (User, Product, Order, etc.)
 using CursorProject.Services;       // Custom services (JWT service)
+using CursorProject.Interfaces;     // Service interfaces
+using CursorProject.Repositories;   // Repository implementations
+using CursorProject.Helpers;        // Helper classes
 using Microsoft.AspNetCore.Authentication.JwtBearer;  // JWT authentication
 using Microsoft.AspNetCore.Identity;                  // User identity management
 using Microsoft.EntityFrameworkCore;                // Entity Framework Core
@@ -60,7 +63,18 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Register custom services in the dependency injection container
-builder.Services.AddScoped<JwtService>();  // JWT service for token generation and validation
+builder.Services.AddScoped<JwtHelper>();  // JWT helper for token generation and validation
+builder.Services.AddScoped<CursorProject.Services.IAuthService, AuthService>();  // Authentication service
+builder.Services.AddScoped<CursorProject.Services.IProductService, ProductService>();  // Product management service
+builder.Services.AddScoped<CursorProject.Services.ICartService, CartService>();  // Shopping cart service
+builder.Services.AddScoped<CursorProject.Services.IOrderService, OrderService>();  // Order management service
+builder.Services.AddScoped<CursorProject.Services.ICategoryService, CategoryService>();  // Category management service
+
+// Register repositories and unit of work
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 // Configure Swagger/OpenAPI documentation
 builder.Services.AddEndpointsApiExplorer();  // Enable API endpoint discovery
@@ -161,26 +175,9 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("Database already exists, continuing...");
     }
 
-    // Create default admin user if no users exist in the database
-    if (!await userManager.Users.AnyAsync())
-    {
-        // Create admin user with default credentials
-        var adminUser = new ApplicationUser
-        {
-            UserName = "admin@example.com",    // Username
-            Email = "admin@example.com",       // Email address
-            FullName = "Admin User",           // Full name
-            EmailConfirmed = true              // Mark email as confirmed
-        };
-
-        // Create the user with password
-        var result = await userManager.CreateAsync(adminUser, "Admin123!");
-        if (result.Succeeded)
-        {
-            // Assign admin role to the user
-            await userManager.AddToRoleAsync(adminUser, "Admin");
-        }
-    }
+    // Seed roles and admin user
+    await SeedData.SeedRolesAsync(roleManager);
+    await SeedData.SeedAdminUserAsync(userManager);
 }
 
 // Start the web application
