@@ -1,202 +1,211 @@
-// Import necessary namespaces for the database context
-using CursorProject.Entities;                    // Application models (User, Product, Order, etc.)
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;  // Identity with EF Core
-using Microsoft.EntityFrameworkCore;         // Entity Framework Core
+using CursorProject.Entities;  // Import domain entities for database mapping
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;  // Import Identity database context base class
+using Microsoft.EntityFrameworkCore;  // Import Entity Framework Core for database operations
 
-// Namespace for data access layer
-namespace CursorProject.Data
+namespace CursorProject.Data  // Define namespace for data access layer
 {
-    /// <summary>
-    /// Main database context for the e-commerce application
-    /// Extends IdentityDbContext to include ASP.NET Identity functionality
-    /// Manages all database operations and entity relationships
-    /// </summary>
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
+    // Database context class that manages all database operations and entity relationships
+    // This class extends IdentityDbContext to include ASP.NET Core Identity functionality
+    // It serves as the main entry point for Entity Framework Core database operations
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>  // Inherit from IdentityDbContext with custom user and role types
     {
-        /// <summary>
-        /// Constructor that accepts database configuration options
-        /// Passes the options to the base IdentityDbContext constructor
-        /// </summary>
-        /// <param name="options">Database configuration options (connection string, provider, etc.)</param>
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)  // Call base constructor with the provided options
+        // Constructor for dependency injection of database configuration options
+        // This constructor is called by the DI container with connection string and other settings
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)  // Accept database configuration options
+            : base(options)  // Pass options to base IdentityDbContext constructor
         {
         }
 
-        // Database table sets (DbSets) - these represent the tables in the database
-        /// <summary>
-        /// Categories table - stores product categories
-        /// </summary>
-        public DbSet<Category> Categories { get; set; }
-        
-        /// <summary>
-        /// Products table - stores all available products
-        /// </summary>
-        public DbSet<Product> Products { get; set; }
-        
-        /// <summary>
-        /// Orders table - stores customer orders
-        /// </summary>
-        public DbSet<Order> Orders { get; set; }
-        
-        /// <summary>
-        /// OrderItems table - stores individual items within orders
-        /// </summary>
-        public DbSet<OrderItem> OrderItems { get; set; }
-        
-        /// <summary>
-        /// Carts table - stores user shopping carts
-        /// </summary>
-        public DbSet<Cart> Carts { get; set; }
-        
-        /// <summary>
-        /// CartItems table - stores individual items within shopping carts
-        /// </summary>
-        public DbSet<CartItem> CartItems { get; set; }
+        // Database table for products in the e-commerce system
+        // This DbSet represents the Products table and provides query capabilities
+        public DbSet<Product> Products { get; set; } = null!;  // Null-forgiving operator tells compiler this will be initialized
 
-        /// <summary>
-        /// Configures the database model, relationships, constraints, and seed data
-        /// Called by Entity Framework when creating the database schema
-        /// </summary>
-        /// <param name="builder">Model builder for configuring the database model</param>
-        protected override void OnModelCreating(ModelBuilder builder)
+        // Database table for product categories
+        // This DbSet represents the Categories table for organizing products
+        public DbSet<Category> Categories { get; set; } = null!;  // Null-forgiving operator tells compiler this will be initialized
+
+        // Database table for customer orders
+        // This DbSet represents the Orders table for tracking customer purchases
+        public DbSet<Order> Orders { get; set; } = null!;  // Null-forgiving operator tells compiler this will be initialized
+
+        // Database table for individual items within orders
+        // This DbSet represents the OrderItems table for order line items
+        public DbSet<OrderItem> OrderItems { get; set; } = null!;  // Null-forgiving operator tells compiler this will be initialized
+
+        // Database table for shopping carts
+        // This DbSet represents the Carts table for temporary shopping cart storage
+        public DbSet<Cart> Carts { get; set; } = null!;  // Null-forgiving operator tells compiler this will be initialized
+
+        // Database table for items within shopping carts
+        // This DbSet represents the CartItems table for cart line items
+        public DbSet<CartItem> CartItems { get; set; } = null!;  // Null-forgiving operator tells compiler this will be initialized
+
+        // Database table for user roles (inherited from IdentityDbContext)
+        // This DbSet represents the Roles table for role-based authorization
+        // Note: Roles is inherited from IdentityDbContext, so we don't need to declare it again
+
+        // Configure entity relationships and database constraints during model creation
+        // This method is called by Entity Framework when building the database model
+        protected override void OnModelCreating(ModelBuilder modelBuilder)  // Override base method to customize model
         {
-            // Call base method to configure Identity tables
-            base.OnModelCreating(builder);
+            // Call base OnModelCreating to configure Identity tables and relationships
+            base.OnModelCreating(modelBuilder);  // Configure ASP.NET Core Identity tables first
 
-            // Configure entity relationships using Fluent API
-            // Product to Category relationship (Many-to-One)
-            builder.Entity<Product>()
-                .HasOne(p => p.Category)           // Product has one Category
-                .WithMany(c => c.Products)         // Category has many Products
-                .HasForeignKey(p => p.CategoryId)  // Foreign key property
-                .OnDelete(DeleteBehavior.Restrict); // Prevent category deletion if products exist
+            // Configure Product entity relationships and constraints
+            modelBuilder.Entity<Product>(entity =>  // Configure Product entity
+            {
+                // Set primary key for Product entity
+                entity.HasKey(p => p.Id);  // Configure Id as primary key
+                
+                // Configure required fields for Product entity
+                entity.Property(p => p.Name).IsRequired().HasMaxLength(200);  // Name is required with max 200 characters
+                entity.Property(p => p.Description).HasMaxLength(1000);  // Description has max 1000 characters
+                entity.Property(p => p.Price).IsRequired().HasColumnType("decimal(18,2)");  // Price is required with decimal precision
+                entity.Property(p => p.ImageUrl).HasMaxLength(500);  // ImageUrl has max 500 characters
+                entity.Property(p => p.StockQuantity).IsRequired();  // StockQuantity is required
+                
+                // Configure foreign key relationship to Category
+                entity.HasOne(p => p.Category)  // Product has one Category
+                    .WithMany(c => c.Products)  // Category has many Products
+                    .HasForeignKey(p => p.CategoryId)  // Foreign key is CategoryId
+                    .OnDelete(DeleteBehavior.Restrict);  // Prevent category deletion if products exist
+                
+                // Configure one-to-many relationship with OrderItems
+                entity.HasMany(p => p.OrderItems)  // Product has many OrderItems
+                    .WithOne(oi => oi.Product)  // OrderItem has one Product
+                    .HasForeignKey(oi => oi.ProductId)  // Foreign key is ProductId
+                    .OnDelete(DeleteBehavior.Restrict);  // Prevent product deletion if order items exist
+                
+                // Configure one-to-many relationship with CartItems
+                entity.HasMany(p => p.CartItems)  // Product has many CartItems
+                    .WithOne(ci => ci.Product)  // CartItem has one Product
+                    .HasForeignKey(ci => ci.ProductId)  // Foreign key is ProductId
+                    .OnDelete(DeleteBehavior.Cascade);  // Delete cart items when product is deleted
+            });
 
-            // Order to User relationship (Many-to-One)
-            builder.Entity<Order>()
-                .HasOne(o => o.User)               // Order has one User
-                .WithMany(u => u.Orders)           // User has many Orders
-                .HasForeignKey(o => o.UserId)      // Foreign key property
-                .OnDelete(DeleteBehavior.Cascade); // Delete orders when user is deleted
+            // Configure Category entity relationships and constraints
+            modelBuilder.Entity<Category>(entity =>  // Configure Category entity
+            {
+                // Set primary key for Category entity
+                entity.HasKey(c => c.Id);  // Configure Id as primary key
+                
+                // Configure required fields for Category entity
+                entity.Property(c => c.Name).IsRequired().HasMaxLength(100);  // Name is required with max 100 characters
+                entity.Property(c => c.Description).HasMaxLength(500);  // Description has max 500 characters
+                
+                // Configure one-to-many relationship with Products
+                entity.HasMany(c => c.Products)  // Category has many Products
+                    .WithOne(p => p.Category)  // Product has one Category
+                    .HasForeignKey(p => p.CategoryId)  // Foreign key is CategoryId
+                    .OnDelete(DeleteBehavior.Restrict);  // Prevent category deletion if products exist
+            });
 
-            // OrderItem to Order relationship (Many-to-One)
-            builder.Entity<OrderItem>()
-                .HasOne(oi => oi.Order)            // OrderItem has one Order
-                .WithMany(o => o.OrderItems)       // Order has many OrderItems
-                .HasForeignKey(oi => oi.OrderId)   // Foreign key property
-                .OnDelete(DeleteBehavior.Cascade); // Delete order items when order is deleted
+            // Configure Order entity relationships and constraints
+            modelBuilder.Entity<Order>(entity =>  // Configure Order entity
+            {
+                // Set primary key for Order entity
+                entity.HasKey(o => o.Id);  // Configure Id as primary key
+                
+                // Configure required fields for Order entity
+                entity.Property(o => o.UserId).IsRequired();  // UserId is required
+                entity.Property(o => o.Status).IsRequired();  // Status is required
+                entity.Property(o => o.TotalAmount).IsRequired().HasColumnType("decimal(18,2)");  // TotalAmount is required with decimal precision
+                entity.Property(o => o.OrderDate).IsRequired();  // OrderDate is required
+                entity.Property(o => o.UpdatedDate).IsRequired();  // UpdatedDate is required
+                entity.Property(o => o.ShippingAddress).IsRequired().HasMaxLength(500);  // ShippingAddress is required with max 500 characters
+                entity.Property(o => o.PhoneNumber).IsRequired().HasMaxLength(20);  // PhoneNumber is required with max 20 characters
+                entity.Property(o => o.Notes).HasMaxLength(1000);  // Notes has max 1000 characters
+                
+                // Configure foreign key relationship to ApplicationUser
+                entity.HasOne(o => o.User)  // Order has one User
+                    .WithMany(u => u.Orders)  // User has many Orders
+                    .HasForeignKey(o => o.UserId)  // Foreign key is UserId
+                    .OnDelete(DeleteBehavior.Cascade);  // Delete orders when user is deleted
+                
+                // Configure one-to-many relationship with OrderItems
+                entity.HasMany(o => o.OrderItems)  // Order has many OrderItems
+                    .WithOne(oi => oi.Order)  // OrderItem has one Order
+                    .HasForeignKey(oi => oi.OrderId)  // Foreign key is OrderId
+                    .OnDelete(DeleteBehavior.Cascade);  // Delete order items when order is deleted
+            });
 
-            // OrderItem to Product relationship (Many-to-One)
-            builder.Entity<OrderItem>()
-                .HasOne(oi => oi.Product)          // OrderItem has one Product
-                .WithMany(p => p.OrderItems)       // Product has many OrderItems
-                .HasForeignKey(oi => oi.ProductId) // Foreign key property
-                .OnDelete(DeleteBehavior.Restrict); // Prevent product deletion if referenced in orders
+            // Configure OrderItem entity relationships and constraints
+            modelBuilder.Entity<OrderItem>(entity =>  // Configure OrderItem entity
+            {
+                // Set primary key for OrderItem entity
+                entity.HasKey(oi => oi.Id);  // Configure Id as primary key
+                
+                // Configure required fields for OrderItem entity
+                entity.Property(oi => oi.OrderId).IsRequired();  // OrderId is required
+                entity.Property(oi => oi.ProductId).IsRequired();  // ProductId is required
+                entity.Property(oi => oi.Quantity).IsRequired();  // Quantity is required
+                entity.Property(oi => oi.Price).IsRequired().HasColumnType("decimal(18,2)");  // Price is required with decimal precision
+                
+                // Configure foreign key relationship to Order
+                entity.HasOne(oi => oi.Order)  // OrderItem has one Order
+                    .WithMany(o => o.OrderItems)  // Order has many OrderItems
+                    .HasForeignKey(oi => oi.OrderId)  // Foreign key is OrderId
+                    .OnDelete(DeleteBehavior.Cascade);  // Delete order item when order is deleted
+                
+                // Configure foreign key relationship to Product
+                entity.HasOne(oi => oi.Product)  // OrderItem has one Product
+                    .WithMany(p => p.OrderItems)  // Product has many OrderItems
+                    .HasForeignKey(oi => oi.ProductId)  // Foreign key is ProductId
+                    .OnDelete(DeleteBehavior.Restrict);  // Prevent order item deletion if product is deleted
+            });
 
-            // Cart to User relationship (One-to-One)
-            builder.Entity<Cart>()
-                .HasOne(c => c.User)               // Cart has one User
-                .WithOne(u => u.Cart)              // User has one Cart
-                .HasForeignKey<Cart>(c => c.UserId) // Foreign key property
-                .OnDelete(DeleteBehavior.Cascade); // Delete cart when user is deleted
+            // Configure Cart entity relationships and constraints
+            modelBuilder.Entity<Cart>(entity =>  // Configure Cart entity
+            {
+                // Set primary key for Cart entity
+                entity.HasKey(c => c.Id);  // Configure Id as primary key
+                
+                // Configure required fields for Cart entity
+                entity.Property(c => c.UserId).IsRequired();  // UserId is required
+                entity.Property(c => c.CreatedDate).IsRequired();  // CreatedDate is required
+                entity.Property(c => c.UpdatedDate).IsRequired();  // UpdatedDate is required
+                
+                // Configure foreign key relationship to ApplicationUser
+                entity.HasOne(c => c.User)  // Cart has one User
+                    .WithOne(u => u.Cart)  // User has one Cart
+                    .HasForeignKey<Cart>(c => c.UserId)  // Foreign key is UserId
+                    .OnDelete(DeleteBehavior.Cascade);  // Delete cart when user is deleted
+                
+                // Configure one-to-many relationship with CartItems
+                entity.HasMany(c => c.CartItems)  // Cart has many CartItems
+                    .WithOne(ci => ci.Cart)  // CartItem has one Cart
+                    .HasForeignKey(ci => ci.CartId)  // Foreign key is CartId
+                    .OnDelete(DeleteBehavior.Cascade);  // Delete cart items when cart is deleted
+            });
 
-            // CartItem to Cart relationship (Many-to-One)
-            builder.Entity<CartItem>()
-                .HasOne(ci => ci.Cart)             // CartItem has one Cart
-                .WithMany(c => c.CartItems)        // Cart has many CartItems
-                .HasForeignKey(ci => ci.CartId)    // Foreign key property
-                .OnDelete(DeleteBehavior.Cascade); // Delete cart items when cart is deleted
+            // Configure CartItem entity relationships and constraints
+            modelBuilder.Entity<CartItem>(entity =>  // Configure CartItem entity
+            {
+                // Set primary key for CartItem entity
+                entity.HasKey(ci => ci.Id);  // Configure Id as primary key
+                
+                // Configure required fields for CartItem entity
+                entity.Property(ci => ci.CartId).IsRequired();  // CartId is required
+                entity.Property(ci => ci.ProductId).IsRequired();  // ProductId is required
+                entity.Property(ci => ci.Quantity).IsRequired();  // Quantity is required
+                entity.Property(ci => ci.Price).IsRequired().HasColumnType("decimal(18,2)");  // Price is required with decimal precision
+                
+                // Configure foreign key relationship to Cart
+                entity.HasOne(ci => ci.Cart)  // CartItem has one Cart
+                    .WithMany(c => c.CartItems)  // Cart has many CartItems
+                    .HasForeignKey(ci => ci.CartId)  // Foreign key is CartId
+                    .OnDelete(DeleteBehavior.Cascade);  // Delete cart item when cart is deleted
+                
+                // Configure foreign key relationship to Product
+                entity.HasOne(ci => ci.Product)  // CartItem has one Product
+                    .WithMany(p => p.CartItems)  // Product has many CartItems
+                    .HasForeignKey(ci => ci.ProductId)  // Foreign key is ProductId
+                    .OnDelete(DeleteBehavior.Cascade);  // Delete cart item when product is deleted
+            });
 
-            // CartItem to Product relationship (Many-to-One)
-            builder.Entity<CartItem>()
-                .HasOne(ci => ci.Product)          // CartItem has one Product
-                .WithMany(p => p.CartItems)        // Product has many CartItems
-                .HasForeignKey(ci => ci.ProductId) // Foreign key property
-                .OnDelete(DeleteBehavior.Restrict); // Prevent product deletion if in carts
-
-            // Configure unique constraints to ensure data integrity
-            // Category names must be unique
-            builder.Entity<Category>()
-                .HasIndex(c => c.Name)             // Create index on Name column
-                .IsUnique();                       // Make the index unique
-
-            // Product names must be unique
-            builder.Entity<Product>()
-                .HasIndex(p => p.Name)             // Create index on Name column
-                .IsUnique();                       // Make the index unique
-
-            // Seed initial data into the database
-            SeedData(builder);
-        }
-
-        /// <summary>
-        /// Seeds the database with initial data (roles, categories, products)
-        /// This data is created when the database is first created
-        /// </summary>
-        /// <param name="builder">Model builder for configuring seed data</param>
-        private void SeedData(ModelBuilder builder)
-        {
-            // Seed default roles for the application
-            builder.Entity<ApplicationRole>().HasData(
-                new ApplicationRole { Id = "1", Name = "Customer", NormalizedName = "CUSTOMER" },  // Customer role
-                new ApplicationRole { Id = "2", Name = "Admin", NormalizedName = "ADMIN" }         // Admin role
-            );
-
-            // Seed default product categories
-            builder.Entity<Category>().HasData(
-                new Category { Id = 1, Name = "Electronics" },      // Electronics category
-                new Category { Id = 2, Name = "Clothing" },         // Clothing category
-                new Category { Id = 3, Name = "Books" },            // Books category
-                new Category { Id = 4, Name = "Home & Garden" }     // Home & Garden category
-            );
-
-            // Seed sample products for testing and demonstration
-            builder.Entity<Product>().HasData(
-                // Smartphone product
-                new Product 
-                { 
-                    Id = 1, 
-                    Name = "Smartphone", 
-                    Description = "Latest smartphone with advanced features", 
-                    Price = 599.99m, 
-                    ImageUrl = "https://via.placeholder.com/300x300?text=Smartphone", 
-                    StockQuantity = 50, 
-                    CategoryId = 1  // Electronics category
-                },
-                // Laptop product
-                new Product 
-                { 
-                    Id = 2, 
-                    Name = "Laptop", 
-                    Description = "High-performance laptop for work and gaming", 
-                    Price = 1299.99m, 
-                    ImageUrl = "https://via.placeholder.com/300x300?text=Laptop", 
-                    StockQuantity = 25, 
-                    CategoryId = 1  // Electronics category
-                },
-                // T-Shirt product
-                new Product 
-                { 
-                    Id = 3, 
-                    Name = "T-Shirt", 
-                    Description = "Comfortable cotton t-shirt", 
-                    Price = 19.99m, 
-                    ImageUrl = "https://via.placeholder.com/300x300?text=T-Shirt", 
-                    StockQuantity = 100, 
-                    CategoryId = 2  // Clothing category
-                },
-                // Programming book product
-                new Product 
-                { 
-                    Id = 4, 
-                    Name = "Programming Book", 
-                    Description = "Learn C# and .NET development", 
-                    Price = 49.99m, 
-                    ImageUrl = "https://via.placeholder.com/300x300?text=Book", 
-                    StockQuantity = 75, 
-                    CategoryId = 3  // Books category
-                }
-            );
+            // Configure Role entity relationships and constraints
+            // Note: Role configuration is handled by ASP.NET Core Identity
+            // Custom role properties can be configured here if needed
         }
     }
 }

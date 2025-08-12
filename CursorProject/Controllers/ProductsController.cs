@@ -1,149 +1,128 @@
-// Import necessary namespaces for the products controller
-using CursorProject.DTOs.Product;              // Data transfer objects
-using CursorProject.DTOs.Category;             // Category DTOs
-using CursorProject.Services;                  // Custom services (ProductService)
-using Microsoft.AspNetCore.Authorization;      // Authorization attributes
-using Microsoft.AspNetCore.Mvc;                // MVC controller base classes
+using CursorProject.DTOs.Product;  // Import product data transfer objects
+using CursorProject.DTOs.Category;  // Import category data transfer objects
+using CursorProject.DTOs;  // Import main DTOs for responses and requests
+using CursorProject.Services;  // Import business logic services
+using Microsoft.AspNetCore.Authorization;  // Import authorization attributes and policies
+using Microsoft.AspNetCore.Mvc;  // Import MVC controller base classes and attributes
 
-// Namespace for API controllers
-namespace CursorProject.Controllers
+namespace CursorProject.Controllers  // Define namespace for API controllers
 {
-    /// <summary>
-    /// Controller for handling product-related operations
-    /// Provides endpoints for browsing, creating, updating, and deleting products
-    /// </summary>
-    [ApiController]  // Indicates this is an API controller
-    [Route("api/[controller]")]  // Route template: api/products
-    public class ProductsController : ControllerBase
+    // Products controller that handles product catalog management endpoints
+    // This controller provides REST API endpoints for product browsing, creation, updates, and deletion
+    [ApiController]  // Indicates this is an API controller with automatic model validation
+    [Route("api/[controller]")]  // Route template: api/products (controller name becomes route segment)
+    public class ProductsController : ControllerBase  // Inherit from ControllerBase for API controller functionality
     {
-        // Private field for dependency injection
-        /// <summary>
-        /// Product service for handling product operations
-        /// </summary>
-        private readonly IProductService _productService;
+        // Dependency injection field for product service
+        private readonly IProductService _productService;  // Product service for handling product operations
 
-        /// <summary>
-        /// Constructor that accepts product service via dependency injection
-        /// </summary>
-        /// <param name="productService">Product service for product operations</param>
-        public ProductsController(IProductService productService)
+        // Constructor for dependency injection of product service
+        // This constructor is called by the DI container when creating the controller
+        public ProductsController(IProductService productService)  // Inject product service
         {
             _productService = productService;  // Store product service reference
         }
 
-        /// <summary>
-        /// Gets a paginated list of products with optional filtering and search
-        /// GET: api/products
-        /// </summary>
-        /// <param name="page">Page number (default: 1)</param>
-        /// <param name="pageSize">Number of products per page (default: 10)</param>
-        /// <param name="categoryId">Optional category filter</param>
-        /// <param name="search">Optional search term for product name or description</param>
-        /// <returns>Paginated list of products with metadata</returns>
-        [HttpGet]  // HTTP GET endpoint
-        public async Task<ActionResult<ProductListResponse>> GetProducts(
-            [FromQuery] int page = 1,           // Page number from query string
-            [FromQuery] int pageSize = 10,      // Page size from query string
-            [FromQuery] int? categoryId = null, // Optional category filter
-            [FromQuery] string? search = null)  // Optional search term
+        // Get paginated list of products with optional filtering
+        // GET: api/products
+        // This endpoint allows browsing products with search, category filtering, and pagination
+        [HttpGet]  // HTTP GET endpoint for product listing
+        public async Task<ActionResult<ProductListResponse>> GetProducts(  // Return paginated product list
+            [FromQuery] int page = 1,  // Page number parameter with default value 1
+            [FromQuery] int pageSize = 10,  // Page size parameter with default value 10
+            [FromQuery] int? categoryId = null,  // Optional category filter parameter
+            [FromQuery] string? search = null)  // Optional search term parameter
         {
-            var response = await _productService.GetProductsAsync(page, pageSize, categoryId, search);
-            return Ok(response);
+            // Call product service to get paginated and filtered product list
+            var response = await _productService.GetProductsAsync(page, pageSize, categoryId, search);  // Process product list request
+            
+            // Return success response with product list and pagination metadata
+            return Ok(response);  // Return 200 OK with product list data
         }
 
-        /// <summary>
-        /// Gets a specific product by its ID
-        /// GET: api/products/{id}
-        /// </summary>
-        /// <param name="id">Product ID</param>
-        /// <returns>Product details</returns>
-        [HttpGet("{id}")]  // HTTP GET endpoint with ID parameter
-        public async Task<ActionResult<ProductDto>> GetProduct(int id)
+        // Get a single product by its unique identifier
+        // GET: api/products/{id}
+        // This endpoint allows viewing detailed information about a specific product
+        [HttpGet("{id}")]  // HTTP GET endpoint with route parameter for product ID
+        public async Task<ActionResult<ProductDto>> GetProduct(int id)  // Accept product ID and return product details
         {
-            var product = await _productService.GetProductByIdAsync(id);
-            if (product == null)
-            {
-                return NotFound();  // Return 404 if product not found
-            }
-
-            return Ok(product);
+            // Call product service to get product by ID
+            var product = await _productService.GetProductByIdAsync(id);  // Process product detail request
+            
+            // Return not found if product doesn't exist
+            if (product == null)  // Check if product was found
+                return NotFound();  // Return 404 Not Found for non-existent products
+                
+            // Return success response with product details
+            return Ok(product);  // Return 200 OK with product information
         }
 
-        /// <summary>
-        /// Creates a new product
-        /// POST: api/products
-        /// Requires admin authorization
-        /// </summary>
-        /// <param name="request">Product creation request</param>
-        /// <returns>Created product details</returns>
-        [HttpPost]  // HTTP POST endpoint
-        [Authorize(Roles = "Admin")]  // Require admin role
-        public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductDto request)
+        // Create a new product in the system
+        // POST: api/products
+        // This endpoint requires admin authorization and allows creating new products
+        [HttpPost]  // HTTP POST endpoint for product creation
+        [Authorize(Roles = "Admin")]  // Require Admin role authorization
+        public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductDto request)  // Accept product creation request
         {
-            try
-            {
-                var product = await _productService.CreateProductAsync(request);
-                return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            // Call product service to create new product
+            var product = await _productService.CreateProductAsync(request);  // Process product creation request
+            
+            // Return success response with created product details
+            // CreatedAtAction returns 201 Created with location header
+            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);  // Return 201 Created with product data
         }
 
-        /// <summary>
-        /// Updates an existing product
-        /// PUT: api/products/{id}
-        /// Requires admin authorization
-        /// </summary>
-        /// <param name="id">Product ID</param>
-        /// <param name="request">Product update request</param>
-        /// <returns>Updated product details</returns>
-        [HttpPut("{id}")]  // HTTP PUT endpoint with ID parameter
-        [Authorize(Roles = "Admin")]  // Require admin role
-        public async Task<ActionResult<ProductDto>> UpdateProduct(int id, UpdateProductRequest request)
+        // Update an existing product in the system
+        // PUT: api/products/{id}
+        // This endpoint requires admin authorization and allows updating product information
+        [HttpPut("{id}")]  // HTTP PUT endpoint with route parameter for product ID
+        [Authorize(Roles = "Admin")]  // Require Admin role authorization
+        public async Task<ActionResult<ProductDto>> UpdateProduct(int id, UpdateProductRequest request)  // Accept product ID and update request
         {
-            try
+            try  // Try to update the product
             {
-                var product = await _productService.UpdateProductAsync(id, request);
-                return Ok(product);
+                // Call product service to update existing product
+                var product = await _productService.UpdateProductAsync(id, request);  // Process product update request
+                
+                // Return success response with updated product details
+                return Ok(product);  // Return 200 OK with updated product information
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex)  // Catch argument exceptions (e.g., product not found)
             {
-                return BadRequest(new { Message = ex.Message });
+                // Return not found if product doesn't exist
+                return NotFound(new { message = ex.Message });  // Return 404 Not Found with error message
             }
         }
 
-        /// <summary>
-        /// Deletes a product
-        /// DELETE: api/products/{id}
-        /// Requires admin authorization
-        /// </summary>
-        /// <param name="id">Product ID</param>
-        /// <returns>Success response</returns>
-        [HttpDelete("{id}")]  // HTTP DELETE endpoint with ID parameter
-        [Authorize(Roles = "Admin")]  // Require admin role
-        public async Task<ActionResult> DeleteProduct(int id)
+        // Delete a product from the system
+        // DELETE: api/products/{id}
+        // This endpoint requires admin authorization and allows removing products
+        [HttpDelete("{id}")]  // HTTP DELETE endpoint with route parameter for product ID
+        [Authorize(Roles = "Admin")]  // Require Admin role authorization
+        public async Task<ActionResult> DeleteProduct(int id)  // Accept product ID for deletion
         {
-            var success = await _productService.DeleteProductAsync(id);
-            if (!success)
-            {
-                return NotFound();  // Return 404 if product not found
-            }
-
-            return NoContent();  // Return 204 for successful deletion
+            // Call product service to delete product
+            var success = await _productService.DeleteProductAsync(id);  // Process product deletion request
+            
+            // Return not found if product doesn't exist
+            if (!success)  // Check if deletion was successful
+                return NotFound();  // Return 404 Not Found for non-existent products
+                
+            // Return success response with no content
+            return NoContent();  // Return 204 No Content for successful deletion
         }
 
-        /// <summary>
-        /// Gets all available categories
-        /// GET: api/products/categories
-        /// </summary>
-        /// <returns>List of categories</returns>
-        [HttpGet("categories")]  // HTTP GET endpoint for categories
-        public async Task<ActionResult<List<CategoryDto>>> GetCategories()
+        // Get all available product categories
+        // GET: api/products/categories
+        // This endpoint provides category list for product filtering
+        [HttpGet("categories")]  // HTTP GET endpoint for category listing
+        public async Task<ActionResult<List<CategoryDto>>> GetCategories()  // Return list of all categories
         {
-            var categories = await _productService.GetCategoriesAsync();
-            return Ok(categories);
+            // Call product service to get all categories
+            var categories = await _productService.GetCategoriesAsync();  // Process category list request
+            
+            // Return success response with category list
+            return Ok(categories);  // Return 200 OK with category list data
         }
     }
 }

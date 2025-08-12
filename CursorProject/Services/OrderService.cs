@@ -1,5 +1,5 @@
 using CursorProject.Data;
-using CursorProject.DTOs.Order;
+using CursorProject.DTOs;
 using CursorProject.Entities;
 using Microsoft.EntityFrameworkCore;
 

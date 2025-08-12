@@ -1,4 +1,4 @@
-using CursorProject.DTOs.Order;
+using CursorProject.DTOs;
 
 namespace CursorProject.Interfaces
 {

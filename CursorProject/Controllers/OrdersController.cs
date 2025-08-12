@@ -1,5 +1,5 @@
 // Import necessary namespaces for the orders controller
-using CursorProject.DTOs.Order;                // Data transfer objects
+using CursorProject.DTOs;                // Data transfer objects
 using CursorProject.Services;                  // Custom services (OrderService)
 using Microsoft.AspNetCore.Authorization;      // Authorization attributes
 using Microsoft.AspNetCore.Mvc;                // MVC controller base classes

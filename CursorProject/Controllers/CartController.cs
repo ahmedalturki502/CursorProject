@@ -1,5 +1,5 @@
 // Import necessary namespaces for the cart controller
-using CursorProject.DTOs.Cart;                 // Data transfer objects
+using CursorProject.DTOs;                 // Data transfer objects
 using CursorProject.Services;                  // Custom services (CartService)
 using Microsoft.AspNetCore.Authorization;      // Authorization attributes
 using Microsoft.AspNetCore.Mvc;                // MVC controller base classes

@@ -1,4 +1,4 @@
-using CursorProject.DTOs.Cart;
+using CursorProject.DTOs;
 
 namespace CursorProject.Interfaces
 {

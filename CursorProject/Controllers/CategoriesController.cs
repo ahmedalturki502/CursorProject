@@ -1,5 +1,6 @@
 // Import necessary namespaces for the categories controller
 using CursorProject.DTOs.Category;             // Data transfer objects
+using CursorProject.DTOs;  // Import main DTOs for responses and requests
 using CursorProject.Services;                  // Custom services (CategoryService)
 using Microsoft.AspNetCore.Authorization;      // Authorization attributes
 using Microsoft.AspNetCore.Mvc;                // MVC controller base classes

@@ -1,4 +1,5 @@
 using CursorProject.DTOs.Category;
+using CursorProject.DTOs;
 
 namespace CursorProject.Interfaces
 {

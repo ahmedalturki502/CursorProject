@@ -44,12 +44,19 @@ namespace CursorProject.Entities
         /// </summary>
         public virtual Product Product { get; set; } = null!;
         
-        /// <summary>
-        /// Quantity of the product in the cart
-        /// Required field that must be at least 1 (cannot add 0 or negative items)
-        /// </summary>
-        [Required]  // Validation: field is mandatory
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]  // Validation: minimum 1
+        // Quantity of the product in the cart
+        // Required field that must be at least 1 for valid cart items
+        // Used for cart calculations and inventory management
+        [Required]  // Validation attribute: field is mandatory and cannot be null
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]  // Validation attribute: minimum value 1
         public int Quantity { get; set; }
+        
+        // Price of the product at the time it was added to cart
+        // Required field that must be greater than 0 for valid cart items
+        // Uses decimal type for accurate financial calculations without rounding errors
+        // This price is stored to maintain historical pricing even if product price changes later
+        [Required]  // Validation attribute: field is mandatory and cannot be null
+        [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]  // Validation attribute: minimum value 0.01
+        public decimal Price { get; set; }
     }
 }
